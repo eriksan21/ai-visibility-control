@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Visibility Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 2.5rem;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        h1 {
+            color: #2d3748;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tagline {
+            color: #718096;
+            font-size: 1rem;
+        }
+        
+        .disclaimer {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #78350f;
+        }
+        
+        .upload-section {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 1.5rem;
+        }
+        
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+        
+        .upload-section.dragover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .mode-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .mode-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mode-card:hover {
+            border-color: #667eea;
+        }
+        
+        .mode-card.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .mode-card h3 {
+            color: #2d3748;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .mode-card p {
+            color: #718096;
+            font-size: 0.85rem;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.875rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        
+        button:hover:not(:disabled) {
+            background: #5a67d8;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+        }
+        
+        .preview-section {
+            display: none;
+            margin-top: 2rem;
+        }
+        
+        .preview-section.active {
+            display: block;
+        }
+        
+        .preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .preview-item {
+            text-align: center;
+        }
+        
+        .preview-item img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .preview-item h3 {
+            margin: 0.75rem 0 0.5rem 0;
+            color: #2d3748;
+            font-size: 0.9rem;
+        }
+        
+        .stats {
+            background: #f7fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        .stats p {
+            color: #4a5568;
+            font-size: 0.9rem;
+            margin: 0.25rem 0;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+        
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .mode-selector {
+                grid-template-columns: 1fr;
+            }
+            
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AI Visibility Control</h1>
+            <p class="tagline">Take control of how AI models perceive your images</p>
+        </header>
+        
+        <div class="disclaimer">
+            <strong>Privacy Notice:</strong> Images are processed in memory only and are never stored. 
+            This service reduces AI recognition likelihood but does not guarantee complete anonymity.
+        </div>
+        
+        <div class="upload-section" id="uploadZone">
+            <div class="upload-icon">📸</div>
+            <p><strong>Click to upload</strong> or drag and drop</p>
+            <p style="color: #a0aec0; font-size: 0.875rem; margin-top: 0.5rem;">
+                Supports JPG and PNG (max 10MB)
+            </p>
+            <input type="file" id="fileInput" accept="image/jpeg,image/jpg,image/png">
+        </div>
+        
+        <div class="mode-selector">
+            <div class="mode-card selected" data-mode="social_safe">
+                <h3>Social Safe</h3>
+                <p>Light protection for social media uploads</p>
+            </div>
+            <div class="mode-card" data-mode="genai_safe">
+                <h3>GenAI Safe</h3>
+                <p>Moderate protection against AI training</p>
+            </div>
+            <div class="mode-card" data-mode="max_privacy">
+                <h3>Max Privacy</h3>
+                <p>Strongest protection with minimal visual impact</p>
+            </div>
+        </div>
+        
+        <button id="processBtn" disabled>Process Image</button>
+        
+        <div class="preview-section" id="previewSection">
+            <div class="loading" id="loadingState">
+                <div class="spinner"></div>
+                <p>Processing your image...</p>
+            </div>
+            
+            <div id="resultsContainer" style="display: none;">
+                <div class="preview-grid">
+                    <div class="preview-item">
+                        <h3>Original</h3>
+                        <img id="originalPreview" alt="Original">
+                    </div>
+                    <div class="preview-item">
+                        <h3>Protected</h3>
+                        <img id="processedPreview" alt="Processed">
+                    </div>
+                </div>
+                
+                <div class="stats" id="statsDisplay"></div>
+                
+                <button id="downloadBtn">Download Protected Image</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = window.location.origin;
+        
+        let selectedFile = null;
+        let processedBlob = null;
+        let selectedMode = 'social_safe';
+        
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const processBtn = document.getElementById('processBtn');
+        const previewSection = document.getElementById('previewSection');
+        const loadingState = document.getElementById('loadingState');
+        const resultsContainer = document.getElementById('resultsContainer');
+        
+        // Mode selection
+        document.querySelectorAll('.mode-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedMode = card.dataset.mode;
+            });
+        });
+        
+        // Upload zone click
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        // Drag and drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+        
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+        
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+        
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+        
+        function handleFileSelect(file) {
+            if (!file.type.match('image/(jpeg|jpg|png)')) {
+                alert('Please upload a JPG or PNG image');
+                return;
+            }
+            
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File too large. Maximum size is 10MB');
+                return;
+            }
+            
+            selectedFile = file;
+            processBtn.disabled = false;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('originalPreview').src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            
+            previewSection.classList.remove('active');
+        }
+        
+        // Process button
+        processBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            previewSection.classList.add('active');
+            loadingState.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            
+            const formData = new FormData();
+            formData.append('image', selectedFile);
+            formData.append('mode', selectedMode);
+            
+            try {
+                const response = await fetch(`${API_BASE}/process`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Processing failed');
+                }
+                
+                processedBlob = await response.blob();
+                const processedUrl = URL.createObjectURL(processedBlob);
+                document.getElementById('processedPreview').src = processedUrl;
+                
+                const facesProcessed = response.headers.get('X-Faces-Processed');
+                const zonesModified = response.headers.get('X-Zones-Modified');
+                const mode = response.headers.get('X-Mode');
+                
+                document.getElementById('statsDisplay').innerHTML = `
+                    <p><strong>Processing Complete</strong></p>
+                    <p>Mode: ${mode}</p>
+                    <p>Faces processed: ${facesProcessed}</p>
+                    <p>Zones modified: ${zonesModified}</p>
+                `;
+                
+                loadingState.style.display = 'none';
+                resultsContainer.style.display = 'block';
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                previewSection.classList.remove('active');
+            }
+        });
+        
+        // Download button
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (!processedBlob) return;
+            
+            const url = URL.createObjectURL(processedBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `protected_${selectedFile.name}`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
